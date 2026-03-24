@@ -1,51 +1,142 @@
+/* 🌌 GLOBAL */
 body {
   margin: 0;
   font-family: "Segoe UI", sans-serif;
-  background: #0b1220;
+  background: linear-gradient(135deg, #020617, #0f172a);
   color: #e2e8f0;
 }
 
+/* 🧱 LAYOUT */
 .app {
   display: flex;
   height: 100vh;
 }
 
+/* 📂 SIDEBAR */
 .sidebar {
   width: 240px;
-  background: #020617;
+  background: rgba(2, 6, 23, 0.9);
   padding: 20px;
   border-right: 1px solid #1e293b;
+  backdrop-filter: blur(10px);
 }
 
+.sidebar h2 {
+  margin-bottom: 20px;
+  font-size: 20px;
+  color: #38bdf8;
+}
+
+/* 📑 TABLE LIST */
 .table-item {
-  padding: 10px;
-  margin-bottom: 6px;
-  border-radius: 6px;
-  transition: 0.2s;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .table-item:hover {
   background: #1e293b;
+  transform: translateX(5px);
 }
 
+/* 📄 MAIN AREA */
 .main {
   flex: 1;
   padding: 20px;
+  overflow-y: auto;
 }
 
+/* 🔤 INPUT */
 input {
   width: 100%;
-  background: transparent;
-  border: none;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid #1e293b;
+  padding: 10px;
+  border-radius: 6px;
   color: #e2e8f0;
-  outline: none;
+  margin-bottom: 10px;
+  transition: 0.2s;
 }
 
+input:focus {
+  border-color: #38bdf8;
+  background: rgba(30, 41, 59, 0.9);
+}
+
+/* 🔘 BUTTON */
 button {
-  background: #2563eb;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: white;
   border: none;
-  padding: 8px 12px;
+  padding: 8px 14px;
   border-radius: 6px;
   cursor: pointer;
+  transition: 0.2s;
+}
+
+button:hover {
+  transform: scale(1.05);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+/* 📊 TABLE */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  background: rgba(15, 23, 42, 0.8);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+th {
+  background: #020617;
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #1e293b;
+  cursor: pointer;
+}
+
+td {
+  padding: 8px;
+  border-bottom: 1px solid #1e293b;
+}
+
+tr:hover {
+  background: rgba(30, 41, 59, 0.6);
+}
+
+/* ❌ DELETE BUTTON */
+td button {
+  background: #ef4444;
+}
+
+td button:hover {
+  background: #dc2626;
+}
+
+/* 📊 STATS */
+.stats {
+  margin: 10px 0;
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+/* 💡 INSIGHT */
+.insight {
+  color: #38bdf8;
+  margin-bottom: 10px;
+}
+
+/* 📱 RESPONSIVE */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+
+  .main {
+    padding: 10px;
+  }
 }

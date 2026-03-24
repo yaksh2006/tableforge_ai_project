@@ -13,7 +13,7 @@ app.get("/", (req, res) => {
   res.send("Server running 🚀");
 });
 
-// Get all tables
+// Tables
 app.get("/tables", async (req, res) => {
   const result = await db.query(
     `SELECT table_name FROM information_schema.tables WHERE table_schema='public'`
@@ -48,29 +48,21 @@ app.put("/update/:table/:id", async (req, res) => {
   res.json(result.rows[0]);
 });
 
-// Insert
-// Insert (FIXED VERSION)
+// Insert (FIXED)
 app.post("/insert/:table", async (req, res) => {
   try {
     const { table } = req.params;
     let data = req.body;
 
-    // 🔍 DEBUG
     console.log("TABLE:", table);
     console.log("DATA:", data);
 
-    // 🔥 FIX FOR PRODUCTS
     if (table === "products") {
-      if (!data.price || data.price === "") {
-        data.price = 0;
-      }
+      if (!data.price || data.price === "") data.price = 0;
     }
 
-    // 🔥 FIX FOR ORDERS
     if (table === "orders") {
-      if (!data.quantity || data.quantity === "") {
-        data.quantity = 1;
-      }
+      if (!data.quantity || data.quantity === "") data.quantity = 1;
     }
 
     const keys = Object.keys(data);
@@ -98,46 +90,42 @@ app.delete("/delete/:table/:id", async (req, res) => {
   res.json({ message: "Deleted" });
 });
 
-
+// 🤖 ADVANCED AI
 app.post("/ai-query", async (req, res) => {
   try {
     const { prompt } = req.body;
     const text = prompt.toLowerCase();
 
-    let table = "users"; // default
+    let table = "users";
 
-    // 🔥 detect table
     if (text.includes("product")) table = "products";
     if (text.includes("order")) table = "orders";
-    if (text.includes("user")) table = "users";
 
     let sqlQuery = `SELECT * FROM ${table}`;
 
-    // 🔥 smart queries
-    if (text.includes("email") && table === "users") {
-      sqlQuery = `SELECT email FROM users`;
-    }
-
-    if (text.includes("name")) {
-      sqlQuery = `SELECT name FROM ${table}`;
+    if (text.includes("count")) {
+      sqlQuery = `SELECT COUNT(*) FROM ${table}`;
     }
 
     if (text.includes("latest")) {
       sqlQuery = `SELECT * FROM ${table} ORDER BY id DESC`;
     }
 
-    if (text.includes("count")) {
-      sqlQuery = `SELECT COUNT(*) FROM ${table}`;
+    if (text.includes("price") && table === "products") {
+      sqlQuery = `SELECT name, price FROM products`;
     }
 
-    console.log("AI Query:", sqlQuery);
+    console.log("AI:", sqlQuery);
 
     const result = await db.query(sqlQuery);
-    res.json(result.rows);
+
+    res.json({
+      query: sqlQuery,
+      data: result.rows
+    });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).send("AI Failed");
+    res.status(500).send("AI failed");
   }
 });
 

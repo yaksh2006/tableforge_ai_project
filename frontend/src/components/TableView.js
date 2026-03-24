@@ -8,6 +8,9 @@ function TableView({ data, setData, table }) {
   const [sortKey, setSortKey] = useState("");
   const [asc, setAsc] = useState(true);
 
+  // 🧠 AI History
+  const [history, setHistory] = useState([]);
+
   // ✏️ Edit
   const handleChange = (i, key, value) => {
     const newData = [...data];
@@ -19,63 +22,46 @@ function TableView({ data, setData, table }) {
     updateRow(table, row.id, row);
   };
 
-  // ➕ Add (FULL FIXED)
-const addRow = () => {
-  let newRow = {};
+  // ➕ Add Row
+  const addRow = () => {
+    let newRow = {};
 
-  // 🔥 if table is empty
-  if (data.length === 0) {
-    if (table === "users") {
-      newRow = { name: "", email: "" };
-    }
-    else if (table === "products") {
-      newRow = { name: "", price: 0 };
-    }
-    else if (table === "orders") {
-      newRow = { product_name: "", quantity: 1 };
-    }
-  }
+    if (data.length === 0) {
+      if (table === "users") newRow = { name: "", email: "" };
+      else if (table === "products") newRow = { name: "", price: 0 };
+      else if (table === "orders") newRow = { product_name: "", quantity: 1 };
+    } else {
+      const sample = data[0];
 
-  // 🔥 if data exists
-  else {
-    const sample = data[0];
-
-    Object.entries(sample).forEach(([key, value]) => {
-      if (key !== "id" && key !== "created_at") {
-
-        if (typeof value === "number") {
-          newRow[key] = 0;
-        } else {
-          newRow[key] = "";
+      Object.entries(sample).forEach(([key, value]) => {
+        if (key !== "id" && key !== "created_at") {
+          if (typeof value === "number") newRow[key] = 0;
+          else newRow[key] = "";
         }
-      }
-    });
-  }
+      });
+    }
 
-  insertRow(table, newRow)
-    .then(res => setData([...data, res.data]))
-    .catch(err => {
-      console.error("Insert Error:", err.response?.data);
-      alert("Insert failed");
-    });
-};
+    insertRow(table, newRow)
+      .then(res => setData([...data, res.data]))
+      .catch(() => alert("Insert failed"));
+  };
 
   // ❌ Delete
   const deleteRow = (id) => {
-    if (window.confirm("Delete this row?")) {
+    if (window.confirm("Delete?")) {
       axios.delete(`http://localhost:5000/delete/${table}/${id}`)
         .then(() => setData(data.filter(d => d.id !== id)));
     }
   };
 
-  // 🔍 FILTER (MISSING THA — FIXED)
+  // 🔍 Filter
   const filteredData = data.filter(row =>
     Object.values(row).some(val =>
       String(val).toLowerCase().includes(search.toLowerCase())
     )
   );
 
-  // 🔃 SORT
+  // 🔃 Sort
   const sortedData = [...filteredData].sort((a, b) => {
     if (!sortKey) return 0;
     return asc
@@ -88,66 +74,63 @@ const addRow = () => {
 
       <h2>{table}</h2>
 
-      {/* 🤖 AI */}
+      {/* 💡 Suggestions */}
+      <div style={{ marginBottom: "10px" }}>
+        <button
+          onClick={() =>
+            alert("Try: latest products / count users / show names")
+          }
+        >
+          💡 Suggestions
+        </button>
+      </div>
+
+      {/* 🤖 AI INPUT */}
       <input
-        placeholder="🤖 Ask AI (show emails, latest users, count users)"
+        placeholder="🤖 Ask AI (latest products, count users)"
         style={{ padding: "10px", width: "100%", marginBottom: "10px" }}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
+
+            // 🧠 Save history
+            setHistory(prev => [...prev, e.target.value]);
+
             axios.post("http://localhost:5000/ai-query", {
               prompt: e.target.value
-            }).then(res => setData(res.data));
+            }).then(res => {
+              setData(res.data.data);
+              alert("SQL: " + res.data.query);
+            }).catch(() => alert("AI failed"));
+
+            e.target.value = ""; // clear input
           }
         }}
       />
 
       {/* 🔍 Search */}
       <input
-        placeholder="🔍 Search..."
+        placeholder="Search..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        style={{ padding: "8px", marginBottom: "10px", width: "100%" }}
       />
 
       {/* 📊 Stats */}
-      <div style={{ marginBottom: "10px" }}>
+      <div style={{ margin: "10px 0" }}>
         <b>Total Rows:</b> {data.length}
       </div>
 
-      {/* 🧠 Insight */}
-      <div style={{ marginBottom: "10px", color: "#38bdf8" }}>
-        💡 Insight: You have {data.length} {table}
-      </div>
-
-      {/* ➕ Button */}
-      <button
-        onClick={addRow}
-        style={{
-          background: "#3b82f6",
-          color: "white",
-          padding: "8px 12px",
-          border: "none",
-          borderRadius: "6px",
-          marginBottom: "10px",
-          cursor: "pointer"
-        }}
-      >
-        ➕ Add Row
-      </button>
+      {/* ➕ Add */}
+      <button onClick={addRow}>➕ Add Row</button>
 
       {/* 📋 Table */}
       <table border="1" width="100%">
         <thead>
           <tr>
             {sortedData[0] && Object.keys(sortedData[0]).map(col => (
-              <th
-                key={col}
-                onClick={() => {
-                  setSortKey(col);
-                  setAsc(!asc);
-                }}
-                style={{ cursor: "pointer" }}
-              >
+              <th key={col} onClick={() => {
+                setSortKey(col);
+                setAsc(!asc);
+              }}>
                 {col} ⬍
               </th>
             ))}
@@ -173,25 +156,22 @@ const addRow = () => {
               ))}
 
               <td>
-                <button
-                  onClick={() => deleteRow(row.id)}
-                  style={{
-                    color: "white",
-                    background: "red",
-                    border: "none",
-                    padding: "5px 8px",
-                    borderRadius: "5px",
-                    cursor: "pointer"
-                  }}
-                >
-                  ❌
-                </button>
+                <button onClick={() => deleteRow(row.id)}>❌</button>
               </td>
-
             </tr>
           ))}
         </tbody>
       </table>
+
+      {/* 🧠 HISTORY */}
+      <div style={{ marginTop: "20px" }}>
+        <h4>🧠 AI History</h4>
+        {history.map((h, i) => (
+          <div key={i} style={{ fontSize: "12px", color: "#94a3b8" }}>
+            {h}
+          </div>
+        ))}
+      </div>
 
     </div>
   );

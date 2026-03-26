@@ -4,6 +4,8 @@ const express = require("express");
 const cors = require("cors");
 const db = require("./db");
 
+
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -90,42 +92,64 @@ app.delete("/delete/:table/:id", async (req, res) => {
   res.json({ message: "Deleted" });
 });
 
-// 🤖 ADVANCED AI
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// 🤖 GEMINI AI
 app.post("/ai-query", async (req, res) => {
   try {
     const { prompt } = req.body;
-    const text = prompt.toLowerCase();
 
-    let table = "users";
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+    });
 
-    if (text.includes("product")) table = "products";
-    if (text.includes("order")) table = "orders";
+    const schema = `
+    users(id, name, email)
+    products(id, name, price)
+    orders(id, product_name, quantity)
+    `;
 
-    let sqlQuery = `SELECT * FROM ${table}`;
+    const result = await model.generateContent(`
+      Convert the user query into PostgreSQL SQL only.
 
-    if (text.includes("count")) {
-      sqlQuery = `SELECT COUNT(*) FROM ${table}`;
+      Schema:
+      ${schema}
+
+      Query:
+      ${prompt}
+    `);
+
+    const response = await result.response;
+    let sqlQuery = response.text();
+
+    sqlQuery = sqlQuery.replace(/```sql/g, "").replace(/```/g, "").trim();
+
+    console.log("PROMPT:", prompt);
+    console.log("SQL:", sqlQuery);
+
+    let data;
+
+    try {
+      data = await db.query(sqlQuery);
+    } catch (dbErr) {
+      console.error("SQL ERROR:", dbErr.message);
+
+      return res.status(400).json({
+        error: "Invalid SQL",
+        query: sqlQuery,
+      });
     }
-
-    if (text.includes("latest")) {
-      sqlQuery = `SELECT * FROM ${table} ORDER BY id DESC`;
-    }
-
-    if (text.includes("price") && table === "products") {
-      sqlQuery = `SELECT name, price FROM products`;
-    }
-
-    console.log("AI:", sqlQuery);
-
-    const result = await db.query(sqlQuery);
 
     res.json({
       query: sqlQuery,
-      data: result.rows
+      data: data.rows,
     });
 
   } catch (err) {
-    res.status(500).send("AI failed");
+    console.error("FULL ERROR:", err);
+    res.status(500).send("Gemini AI failed");
   }
 });
 
